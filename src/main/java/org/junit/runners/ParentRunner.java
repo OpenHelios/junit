@@ -220,11 +220,7 @@ public abstract class ParentRunner<T> extends Runner implements Filterable,
                 try {
                     statement.evaluate();
                 } catch (Throwable e) {
-                    runChildren(notifier, new ChildSelector<T>() {
-                        public boolean include(T child) {
-                            return isIgnored(child);
-                        }
-                    });
+                    runChildren(notifier, true);
                     throw e;
                 }
             }
@@ -291,11 +287,7 @@ public abstract class ParentRunner<T> extends Runner implements Filterable,
         return new Statement() {
             @Override
             public void evaluate() {
-                runChildren(notifier, new ChildSelector<T>() {
-                    public boolean include(T child) {
-                        return true;
-                    }
-                });
+                runChildren(notifier, false);
             }
         };
     }
@@ -311,20 +303,19 @@ public abstract class ParentRunner<T> extends Runner implements Filterable,
         return false;
     }
 
-    private static interface ChildSelector<T> {
-        boolean include(T child);
-    }
-
-    private void runChildren(final RunNotifier notifier, final ChildSelector<T> childSelector) {
+    private void runChildren(final RunNotifier notifier, final boolean onlyIgnore) {
         final RunnerScheduler currentScheduler = scheduler;
         try {
             for (final T each : getFilteredChildren()) {
-                if (childSelector.include(each)) {
+                if (!onlyIgnore || isIgnored(each)) {
                     currentScheduler.schedule(new Runnable() {
                         public void run() {
                             ParentRunner.this.runChild(each, notifier);
                         }
                     });
+                } else if (each instanceof ParentRunner) {
+                    ParentRunner<?> childParentRunner = (ParentRunner<?>) each;
+                    childParentRunner.runChildren(notifier, true);
                 }
             }
         } finally {

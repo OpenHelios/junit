@@ -16,7 +16,10 @@ import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.JUnitCore;
 import org.junit.runner.Result;
+import org.junit.runner.RunWith;
 import org.junit.runners.BlockJUnit4ClassRunner;
+import org.junit.runners.Suite;
+import org.junit.runners.Suite.SuiteClasses;
 import org.junit.runners.model.InitializationError;
 
 public class TestMethodTest {
@@ -305,6 +308,25 @@ public class TestMethodTest {
         assertEquals(1, result.getFailureCount());
         assertEquals(1, result.getIgnoreCount());
         assertEquals(2, result.getRunCount());
+    }
+
+    @RunWith(Suite.class)
+    @SuiteClasses({
+        OnlyTestIsIgnored.class
+    })
+    public static class SuiteOnlyTestIsIgnoredCausedByExceptionInBeforeClass {
+        @BeforeClass
+        public static void throwException() throws Exception {
+            throw new Exception();
+        }
+    }
+
+    @Test
+    public void testSuiteOneIgnoredCausedByExceptionInBefore() {
+        Result result = JUnitCore.runClasses(SuiteOnlyTestIsIgnoredCausedByExceptionInBeforeClass.class);
+        assertEquals(1, result.getFailureCount());
+        assertEquals(1, result.getIgnoreCount());
+        assertEquals(0, result.getRunCount());
     }
 
 }
